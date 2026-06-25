@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Монитор</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #1e1e1e; color: #ddd; font-family: monospace; margin: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .chart-box { background: #2a2a2a; border-radius: 8px; padding: 10px; }
+        canvas { width: 100%; height: 250px; }
+        h2 { font-size: 14px; margin: 0 0 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="grid">
+        <div class="chart-box"><h2>Пользователи онлайн</h2><canvas id="chart1"></canvas></div>
+        <div class="chart-box"><h2>Среднее число пользователей</h2><canvas id="chart2"></canvas></div>
+        <div class="chart-box"><h2>Cкорость изменения онлайна</h2><canvas id="chart3"></canvas></div>
+        <div class="chart-box"><h2>Активные серверы</h2><canvas id="chart4"></canvas></div>
+    </div>
+
+    <script>
+        const colors = { grid: '#444', blue: '#4ea8f6', green: '#4caf50', red: '#f44336', purple: '#b39ddb' };
+
+        function createChart(id, label, color, yMin=null, yMax=null) {
+            return new Chart(document.getElementById(id), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: label, data: [], borderColor: color, borderWidth: 1.5, pointRadius: 0, tension: 0.2 }] },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { ticks: { color: '#aaa', font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: colors.grid } },
+                        y: { min: yMin, max: yMax, ticks: { color: '#aaa', font: { size: 10 } }, grid: { color: colors.grid } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        const chart1 = createChart('chart1', 'Users', colors.blue);
+        const chart2 = createChart('chart2', 'Avg', colors.green);
+        const chart3 = createChart('chart3', 'Deriv', colors.red);
+        const chart4 = createChart('chart4', 'Servers', colors.purple, 0, 11);
+
+        async function update() {
+            const resp = await fetch('/data');
+            const d = await resp.json();
+            chart1.data.labels = d.timestamps; chart1.data.datasets[0].data = d.users; chart1.update();
+            chart2.data.labels = d.timestamps; chart2.data.datasets[0].data = d.avg_users; chart2.update();
+            chart3.data.labels = d.timestamps; chart3.data.datasets[0].data = d.derivative; chart3.update();
+            chart4.data.labels = d.timestamps; chart4.data.datasets[0].data = d.servers; chart4.update();
+        }
+
+        setInterval(update, 1000);
+    </script>
+</body>
+</html>
